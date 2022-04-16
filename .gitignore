@@ -39,3 +39,6 @@
 *.cproject
 .pydevproject
 .settings/
+
+# ModusToolbox
+mtb_shared/
