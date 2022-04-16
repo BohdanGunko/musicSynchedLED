@@ -80,11 +80,11 @@ VERBOSE=
 # added to the build
 #
 COMPONENTS+=FREERTOS RTOS_AWARE
-# add CUSTOM_BSP_DESIGN_MODUS component so device configurator will use it
-COMPONENTS+=CUSTOM_BSP_DESIGN_MODUS
+# add CUSTOM_DESIGN_MODUS component so device configurator will use it
+COMPONENTS+=CUSTOM_DESIGN_MODUS
 
 # Like COMPONENTS, but disable optional code that was enabled by default.
-# Disable BSP_DESIGN_MODUS component so CUSTOM_BSP_DESIGN_MODUS will
+# Disable BSP_DESIGN_MODUS component so CUSTOM_DESIGN_MODUS will
 # be used by device configurator
 DISABLE_COMPONENTS+=BSP_DESIGN_MODUS
 
