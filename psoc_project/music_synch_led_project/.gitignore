@@ -16,7 +16,7 @@ libs/
 # .settings/
 # .cproject
 # .project
-# .mtbLaunchConfigs/
+.mtbLaunchConfigs/
 
 # ModusToolbox Configurator generated code
 GeneratedSource/
