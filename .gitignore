@@ -30,3 +30,15 @@
 *.exe
 *.out
 *.app
+
+# Visual Studio Code
+.vscode/
+
+# Eclipse
+*.project
+*.cproject
+.pydevproject
+.settings/
+
+# ModusToolbox
+mtb_shared/
