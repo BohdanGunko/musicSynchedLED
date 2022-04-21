@@ -46,6 +46,7 @@
 #include "cy_retarget_io.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "ws2812b_lib/ws2812.h"
 
 
 /*******************************************************************************
@@ -194,11 +195,26 @@ void counter_task( void * arg )
 {
     (void)arg;
     uint16 count = 0;
+    ws2812_rtn_t ws_result = ws2812_error;
+    ws_result = ws2812_init( 10, CYBSP_A0, CYBSP_A1, CYBSP_A2);
+    if (ws2812_success != ws_result)
+    {
+        printf("ws2812_init SUCCESS\r\n");
+    }
 
     printf("%s started!\r\n", COUNTER_TASK_NAME);
 
     for(;;)
     {
+        ws2812_setMultiRGB( 0, 9, 255, 0, 0); // Set all LEDs to RED at max brighness
+        ws2812_update();
+        Cy_SysLib_Delay(1000);
+        ws2812_setMultiRGB( 0, 9, 0, 255, 0); // Set all LEDs to GREEN at max brighness
+        ws2812_update();
+        Cy_SysLib_Delay(1000);
+        ws2812_setMultiRGB( 0, 9, 0, 0, 255); // Set all LEDs to BLUE at max brighness
+        ws2812_update();
+        Cy_SysLib_Delay(1000);
         /* Delay the print counter */
         vTaskDelay(COUNTER_LED_TASK_DELAY_TICKS ) ;
 
