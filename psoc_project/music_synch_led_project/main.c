@@ -53,26 +53,27 @@ int main(void)
 void blinky_leds_task(void *arg)
 {
     (void)arg;
-    ws2812_rtn_t ws_res = ws2812_error;
+    ws2818_res_t ws_res = ws2812_error_generic;
 
     printf("%s started!\r\n", BLINKY_LEDS_TASK_NAME);
 
-    ws_res = ws2812_init(10, CYBSP_A0, CYBSP_A1, CYBSP_A2);
+    /* MISO and SCLK are not needed sothey are not connected (NC) */
+    ws_res = ws2812_init(CYBSP_A0, NC, NC);
     if(ws2812_success != ws_res)
     {
-        printf("ws2812_init SUCCESS\r\n");
+        printf("ws2812_init failed\r\n");
         CY_ASSERT(0);
     }
 
     for(;;)
     {
-        ws2812_setMultiRGB(0, 9, 255, 0, 0);    // Set all LEDs to RED at max brighness
+        ws2812_set_all_leds(255, 0, 0);    // Set all LEDs to RED at max brighness
         ws2812_update();
         vTaskDelay(pdMS_TO_TICKS(1000));
-        ws2812_setMultiRGB(0, 9, 0, 255, 0);    // Set all LEDs to GREEN at max brighness
+        ws2812_set_all_leds(0, 255, 0);    // Set all LEDs to GREEN at max brighness
         ws2812_update();
         vTaskDelay(pdMS_TO_TICKS(1000));
-        ws2812_setMultiRGB(0, 9, 0, 0, 255);    // Set all LEDs to BLUE at max brighness
+        ws2812_set_all_leds(0, 0, 255);    // Set all LEDs to BLUE at max brighness
         ws2812_update();
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
