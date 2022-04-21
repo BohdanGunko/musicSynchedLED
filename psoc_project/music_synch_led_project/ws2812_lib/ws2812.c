@@ -25,13 +25,13 @@ ws2818_res_t ws2812_init(cyhal_gpio_t mosi, cyhal_gpio_t miso, cyhal_gpio_t sclk
 
     /* Initialize SPI block that will be used to drive data to the LEDs */
     cy_res = cyhal_spi_init(&ws2182_spi_handle, mosi, miso, sclk, NC, NULL, 8, CYHAL_SPI_MODE_11_MSB, false);
-    if(cy_res != CY_RSLT_SUCCESS)
+    if(CY_RSLT_SUCCESS != cy_res)
     {
         return ws2812_error_generic;
     }
 
     cy_res = cyhal_spi_set_frequency(&ws2182_spi_handle, 2200000);
-    if(cy_res != CY_RSLT_SUCCESS)
+    if(CY_RSLT_SUCCESS != cy_res)
     {
         return ws2812_error_generic;
     }
@@ -42,13 +42,13 @@ ws2818_res_t ws2812_init(cyhal_gpio_t mosi, cyhal_gpio_t miso, cyhal_gpio_t sclk
 
     /* Turn of all LEDs */
     ws_res =  ws2812_set_all_leds(0, 0, 0);
-    if(ws_res != ws2812_success)
+    if(ws2812_success != ws_res)
     {
         return ws_res;
     }
 
     ws_res = ws2812_update();
-    if(ws_res != ws2812_success)
+    if(ws2812_success != ws_res)
     {
         return ws_res;
     }
@@ -96,7 +96,7 @@ ws2818_res_t ws2812_set_range(uint16_t start, uint16_t end, uint8_t red, uint8_t
 
     /* Set RGB values for the first LED and then copy to the rest of them */
     ws_res = ws2812_set_led(start, red, green, blue);
-    if(ws_res != ws2812_success)
+    if(ws2812_success != ws_res)
     {
         return ws_res;
     }
@@ -122,7 +122,7 @@ ws2818_res_t ws2812_update(void)
     cy_rslt_t cy_res;
 
     cy_res = cyhal_spi_transfer(&ws2182_spi_handle, ws_frame_buffer, WS_ZERO_OFFSET + (WS2812_LEDS_COUNT * WS_BYTES_PER_PIXEL), NULL, 0, 0x00);
-    if(cy_res != CY_RSLT_SUCCESS)
+    if(CY_RSLT_SUCCESS != cy_res)
     {
         return ws2812_error_generic;
     }
