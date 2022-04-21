@@ -4,7 +4,7 @@
 #include "cy_retarget_io.h"
 #include "FreeRTOS.h"
 #include "task.h"
-#include "ws2812b_lib/ws2812.h"
+#include "ws2812_lib/ws2812.h"
 
 /* Defines for blinky LEDs task */
 #define BLINKY_LEDS_TASK_NAME       ("Blinky LEDs task")
