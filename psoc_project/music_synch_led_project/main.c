@@ -5,6 +5,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "ws2812_lib/ws2812.h"
+#include "helper_utils.h"
 
 /* Defines for blinky LEDs task */
 #define BLINKY_LEDS_TASK_NAME       ("Blinky LEDs task")
@@ -20,10 +21,7 @@ int main(void)
 
     /* Initialize the device and board peripherals */
     cy_res = cybsp_init();
-    if(CY_RSLT_SUCCESS != cy_res)
-    {
-        CY_ASSERT(0);
-    }
+    CY_ASSERT(CY_RSLT_SUCCESS == cy_res);
 
     /* Enable global interrupts */
     __enable_irq();
@@ -31,16 +29,14 @@ int main(void)
     /* Initialize retarget-io to use the debug UART port */
     cy_retarget_io_init(CYBSP_DEBUG_UART_TX, CYBSP_DEBUG_UART_RX, CY_RETARGET_IO_BAUDRATE);
 
+    /* Clear screen */
+    printf("\033[2J");
     printf("\r\n***** LED control app started *****\r\n\n");
     printf("Build date %s and time %s\r\n\n", __DATE__, __TIME__);
 
     /* Create FreeRTOS task */
     rtos_res = xTaskCreate(blinky_leds_task, BLINKY_LEDS_TASK_NAME, BLINKY_LEDS_TASK_STACK_SIZE, NULL, BLINKY_LEDS_TASK_PRIORITY, NULL);
-    if(pdPASS != rtos_res)
-    {
-        printf("%s did not start!\r\n", BLINKY_LEDS_TASK_NAME);
-        CY_ASSERT(0);
-    }
+    ASSERT_WITH_PRINT(pdPASS == rtos_res, "%s didn't started!\r\n", BLINKY_LEDS_TASK_NAME);
 
     vTaskStartScheduler();
 
@@ -53,17 +49,13 @@ int main(void)
 void blinky_leds_task(void *arg)
 {
     (void)arg;
-    ws2818_res_t ws_res = ws2812_error_generic;
+    ws2818_res_t ws_res;
 
     printf("%s started!\r\n", BLINKY_LEDS_TASK_NAME);
 
     /* MISO and SCLK are not needed sothey are not connected (NC) */
     ws_res = ws2812_init(CYBSP_A0, NC, NC);
-    if(ws2812_success != ws_res)
-    {
-        printf("ws2812_init failed\r\n");
-        CY_ASSERT(0);
-    }
+    ASSERT_WITH_PRINT(ws2812_success == ws_res, "ws2812_init failed\r\n");
 
     for(;;)
     {
