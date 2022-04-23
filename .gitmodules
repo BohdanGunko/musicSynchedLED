@@ -1,0 +1,3 @@
+[submodule "psoc_project/CMSIS_5"]
+	path = psoc_project/CMSIS_5
+	url = https://github.com/ARM-software/CMSIS_5
