@@ -1,7 +1,7 @@
 #ifndef __WS2812_H__
 #define __WS2812_H__
 
-#define WS2812_LEDS_COUNT   (30)
+#include "app_config.h"
 
 typedef enum
 {
