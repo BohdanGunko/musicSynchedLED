@@ -6,6 +6,6 @@
 
 /* FFT related definitions */
 #define FFT_SIZE            (1024)
-#define FFT_SIZE_HALF       (FFT_SAMPLES / 2)
+#define FFT_SIZE_HALF       (FFT_SIZE / 2)
 
 #endif /* __APP_CONFIG_H__ */

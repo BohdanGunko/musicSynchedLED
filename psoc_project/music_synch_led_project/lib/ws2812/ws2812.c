@@ -121,6 +121,7 @@ ws2818_res_t ws2812_update(void)
 {
     cy_rslt_t cy_res;
 
+    /* TODO: This may be asynch transfer using Semaphores */
     cy_res = cyhal_spi_transfer(&ws2182_spi_handle, ws_frame_buffer, WS_ZERO_OFFSET + (WS2812_LEDS_COUNT * WS_BYTES_PER_PIXEL), NULL, 0, 0x00);
     if(CY_RSLT_SUCCESS != cy_res)
     {
