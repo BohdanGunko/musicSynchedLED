@@ -1,18 +1,23 @@
+/* Hardware */
 #include "cy_pdl.h"
 #include "cyhal.h"
 #include "cybsp.h"
 #include "cy_retarget_io.h"
+/* Free RTOS */
 #include "FreeRTOS.h"
 #include "task.h"
-#include "ws2812_lib/ws2812.h"
+/* Application configuration */
+#include "app_config.h"
+/* Libraries */
 #include "helper_utils.h"
+#include "ws2812.h"
 
 /* Defines for blinky LEDs task */
 #define BLINKY_LEDS_TASK_NAME       ("Blinky LEDs task")
 #define BLINKY_LEDS_TASK_STACK_SIZE (2 *1024)
 #define BLINKY_LEDS_TASK_PRIORITY   (5)
 
-void blinky_leds_task(void *arg);
+void blinky_leds_task(void* arg);
 
 int main(void)
 {
@@ -30,7 +35,7 @@ int main(void)
     cy_retarget_io_init(CYBSP_DEBUG_UART_TX, CYBSP_DEBUG_UART_RX, CY_RETARGET_IO_BAUDRATE);
 
     /* Clear screen */
-    printf("\033[2J");
+    printf("\x1b[2J\x1b[;H");
     printf("\r\n***** LED control app started *****\r\n\n");
     printf("Build date %s and time %s\r\n\n", __DATE__, __TIME__);
 
@@ -46,7 +51,7 @@ int main(void)
     }
 }
 
-void blinky_leds_task(void *arg)
+void blinky_leds_task(void* arg)
 {
     (void)arg;
     ws2818_res_t ws_res;
