@@ -1,5 +1,8 @@
+#include "cy_pdl.h"
 #include "cyhal.h"
+#include "cybsp.h"
 #include "ws2812.h"
+#include <stdio.h>
 
 #define WS_ZERO_OFFSET      (1)
 #define WS_ONE_CODE         (0b110 << 24)
@@ -18,6 +21,81 @@ typedef union
     uint32_t word;
 } ws_converted_color_u;
 
+void tx_dma_complete(void)
+{
+    printf("tx_dma_complete\r\n");
+}
+
+#define WS_NUM_DESCRIPTORS (sizeof(ws_frame_buffer) / 256 + 1)
+static cy_stc_dma_descriptor_t WSDescriptors[WS_NUM_DESCRIPTORS];
+static void WS_DMAConfigure(void)
+{
+    // I copies this structure from the PSoC Creator Component configuration
+    // in generated source
+    const cy_stc_dma_descriptor_config_t WS_DMA_Descriptors_config =
+    {
+    .retrigger       = CY_DMA_RETRIG_IM,
+    .interruptType   = CY_DMA_DESCR_CHAIN,
+    .triggerOutType  = CY_DMA_1ELEMENT,
+    .channelState    = CY_DMA_CHANNEL_ENABLED,
+    .triggerInType   = CY_DMA_1ELEMENT,
+    .dataSize        = CY_DMA_BYTE,
+    .srcTransferSize = CY_DMA_TRANSFER_SIZE_DATA,
+    .dstTransferSize = CY_DMA_TRANSFER_SIZE_WORD,
+    .descriptorType  = CY_DMA_1D_TRANSFER,
+    .srcAddress      = NULL,
+    .dstAddress      = NULL,
+    .srcXincrement   = 1L,
+    .dstXincrement   = 0L,
+    .xCount          = 256UL,
+    .srcYincrement   = 0L,
+    .dstYincrement   = 0L,
+    .yCount          = 1UL,
+    .nextDescriptor  = 0
+    };
+
+    for(unsigned int i=0;i<WS_NUM_DESCRIPTORS;i++)
+    {
+        Cy_DMA_Descriptor_Init(&WSDescriptors[i], &WS_DMA_Descriptors_config);
+        Cy_DMA_Descriptor_SetSrcAddress(&WSDescriptors[i], (uint8_t *)&ws_frame_buffer[i*256]);
+        Cy_DMA_Descriptor_SetDstAddress(&WSDescriptors[i], (void *)&ws2182_spi_handle.base->TX_FIFO_WR);
+        Cy_DMA_Descriptor_SetXloopDataCount(&WSDescriptors[i],256); // the last
+        Cy_DMA_Descriptor_SetNextDescriptor(&WSDescriptors[i],&WSDescriptors[i+1]);
+    }
+
+    // The last one needs a bit of change
+    Cy_DMA_Descriptor_SetXloopDataCount(&WSDescriptors[WS_NUM_DESCRIPTORS-1],sizeof(ws_frame_buffer)-256*(WS_NUM_DESCRIPTORS-1)); // the last
+    Cy_DMA_Descriptor_SetNextDescriptor(&WSDescriptors[WS_NUM_DESCRIPTORS-1],0);
+    Cy_DMA_Descriptor_SetChannelState(&WSDescriptors[WS_NUM_DESCRIPTORS-1],CY_DMA_CHANNEL_DISABLED);
+
+    const cy_stc_sysint_t intTxDma_cfg =
+     {
+         .intrSrc      = WS_DMA_IRQ,
+         .intrPriority = 7u
+     };
+
+    /* Initialize and enable the interrupt from TxDma */
+    Cy_SysInt_Init(&intTxDma_cfg, &tx_dma_complete);
+    NVIC_EnableIRQ((IRQn_Type)intTxDma_cfg.intrSrc);
+
+    /* Enable DMA interrupt source. */
+    Cy_DMA_Channel_SetInterruptMask(WS_DMA_HW, WS_DMA_CHANNEL, CY_DMA_INTR_MASK);
+
+
+    Cy_DMA_Enable(WS_DMA_HW);
+}
+
+void WS_DMATrigger()
+{
+    cy_stc_dma_channel_config_t channelConfig;
+    channelConfig.descriptor  = &WSDescriptors[0];
+    channelConfig.preemptable = false;
+    channelConfig.priority    = 3;
+    channelConfig.enable      = false;
+    Cy_DMA_Channel_Init(WS_DMA_HW, WS_DMA_CHANNEL, &channelConfig);
+    Cy_DMA_Channel_Enable(WS_DMA_HW,WS_DMA_CHANNEL);
+}
+
 ws2818_res_t ws2812_init(cyhal_gpio_t mosi, cyhal_gpio_t miso, cyhal_gpio_t sclk)
 {
     cy_rslt_t cy_res;
@@ -35,6 +113,8 @@ ws2818_res_t ws2812_init(cyhal_gpio_t mosi, cyhal_gpio_t miso, cyhal_gpio_t sclk
     {
         return ws2812_error_generic;
     }
+
+    WS_DMAConfigure();
 
     /* First byte of transferred data is ignored by WS2812 for some reasons,
      * so it makes sense to zero it out */
@@ -122,7 +202,8 @@ ws2818_res_t ws2812_update(void)
     cy_rslt_t cy_res;
 
     /* TODO: This may be asynch transfer using Semaphores */
-    cy_res = cyhal_spi_transfer(&ws2182_spi_handle, ws_frame_buffer, WS_ZERO_OFFSET + (WS2812_LEDS_COUNT * WS_BYTES_PER_PIXEL), NULL, 0, 0x00);
+    // cy_res = cyhal_spi_transfer(&ws2182_spi_handle, ws_frame_buffer, WS_ZERO_OFFSET + (WS2812_LEDS_COUNT * WS_BYTES_PER_PIXEL), NULL, 0, 0x00);
+    WS_DMATrigger();
     if(CY_RSLT_SUCCESS != cy_res)
     {
         return ws2812_error_generic;
