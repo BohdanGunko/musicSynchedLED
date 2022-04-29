@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include "helper_utils.h"
 #include "ws2812.h"
+#include "fft_wrapper.h"
 
 /* Defines for blinky LEDs task */
 #define BLINKY_LEDS_TASK_NAME       ("Blinky LEDs task")
@@ -50,7 +51,7 @@ static const cyhal_adc_channel_config_t adc_chan_cfg = {
 };
 
 /* Timer is used to measure performance */
-static cyhal_timer_t timer_odj;
+static cyhal_timer_t timer_obj;
 
 /* Timer config */
 static cyhal_timer_cfg_t timer_cfg = {
@@ -81,6 +82,7 @@ int main(void)
 {
     cy_rslt_t cy_res;
     BaseType_t rtos_res;
+    arm_status arm_res;
 
     /* Used by GDB for better debugging experience */
     uxTopUsedPriority = configMAX_PRIORITIES - 1;
@@ -103,6 +105,12 @@ int main(void)
     /* Initialize application related HW and SW */
     cy_res = app_init();
     ASSERT_WITH_PRINT(CY_RSLT_SUCCESS == cy_res, "app_init failed!\r\n");
+
+    /* Measure FFT performance before starting RToS to get more accurate results */
+#if MEASURE_PERFORMANCE == 1
+    arm_res = measure_fft_performance(&timer_obj);
+    ASSERT_WITH_PRINT(ARM_MATH_SUCCESS == arm_res, "measure_fft_performance failed!\r\n");
+#endif
 
     /* Create semaphore */
     audio_sampling_semaphore = xSemaphoreCreateBinary();
@@ -142,16 +150,16 @@ void blinky_leds_task(void* arg)
     for(;;)
     {
 #if MEASURE_PERFORMANCE == 1
-        cyhal_timer_stop(&timer_odj);
-        cyhal_timer_reset(&timer_odj);
-        cyhal_timer_start(&timer_odj);
+        cyhal_timer_stop(&timer_obj);
+        cyhal_timer_reset(&timer_obj);
+        cyhal_timer_start(&timer_obj);
 #endif
 
         cy_res = cyhal_adc_read_async(&adc_obj, FFT_SIZE, &audio_buffer[FFT_SIZE * active_adc_buffer]);
         ASSERT_WITH_PRINT(CY_RSLT_SUCCESS == cy_res, "cyhal_adc_read_async failed!\r\n");
 
 #if MEASURE_PERFORMANCE == 1
-        uint32_t red_async_duration = cyhal_timer_read(&timer_odj);
+        uint32_t red_async_duration = cyhal_timer_read(&timer_obj);
 #endif
 
         for(uint32_t i = 0; i < FFT_SIZE; ++i)
@@ -168,15 +176,15 @@ void blinky_leds_task(void* arg)
         active_adc_buffer = swap_tmp;
 
 #if MEASURE_PERFORMANCE == 1
-        uint32_t print_duration = cyhal_timer_read(&timer_odj) - red_async_duration;
+        uint32_t print_duration = cyhal_timer_read(&timer_obj) - red_async_duration;
 #endif
 
         /* Semaphore will be released in ADC IRQ once cyhal_adc_read_async completes */
         xSemaphoreTake(audio_sampling_semaphore, portMAX_DELAY);
 
 #if MEASURE_PERFORMANCE == 1
-        uint32_t semaphore_wait_duration = cyhal_timer_read(&timer_odj) - print_duration;
-        cyhal_timer_stop(&timer_odj);
+        uint32_t semaphore_wait_duration = cyhal_timer_read(&timer_obj) - print_duration;
+        cyhal_timer_stop(&timer_obj);
 
         printf("Duration: Async %lu\r\n", red_async_duration);
         printf("Duration: Print %lu\r\n", print_duration);
@@ -208,14 +216,14 @@ static cy_rslt_t app_init(void)
     }
 
     /* Initialize timer */
-    cy_res = cyhal_timer_init(&timer_odj, NC, NULL);
+    cy_res = cyhal_timer_init(&timer_obj, NC, NULL);
     if(CY_RSLT_SUCCESS != cy_res)
     {
         return cy_res;
     }
 
     /* Configure timer */
-    cy_res = cyhal_timer_configure(&timer_odj, &timer_cfg);
+    cy_res = cyhal_timer_configure(&timer_obj, &timer_cfg);
     if(CY_RSLT_SUCCESS != cy_res)
     {
         return cy_res;
@@ -271,8 +279,8 @@ static void adc_event_handler(void* arg, cyhal_adc_event_t event)
     (void)arg;
     if(0u != (event & CYHAL_ADC_ASYNC_READ_COMPLETE))
     {
-        BaseType_t yield_required;
-        xSemaphoreGiveFromISR(audio_sampling_semaphore, yield_required);
+        BaseType_t yield_required = pdFALSE;
+        xSemaphoreGiveFromISR(audio_sampling_semaphore, &yield_required);
         portYIELD_FROM_ISR(yield_required);
     }
 }
