@@ -7,8 +7,7 @@
 #include "app_config.h"
 #include "cyhal.h"
 
-arm_status rfft_init();
-void compute_rfft(float* input, float* res);
+void compute_rfft(arm_rfft_fast_instance_f32* fft_obj, int32_t* input, float* res, size_t fft_size);
 arm_status measure_fft_performance(cyhal_timer_t* timer_obj);
 
 #endif /* __FFT_WRAPPER_H__ */
