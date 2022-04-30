@@ -2,6 +2,7 @@
 #define __WS2812_H__
 
 #include "app_config.h"
+#include "cyhal.h"
 
 typedef enum
 {

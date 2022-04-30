@@ -104,7 +104,8 @@ SOURCES=$(CMSISDSP_PATH)/Source/TransformFunctions/arm_rfft_fast_init_f32.c \
         $(CMSISDSP_PATH)/Source/ComplexMathFunctions/arm_cmplx_mag_f32.c \
         $(CMSISDSP_PATH)/Source/SupportFunctions/arm_q31_to_float.c \
         $(CMSISDSP_PATH)/Source/CommonTables/arm_common_tables.c \
-        $(CMSISDSP_PATH)/Source/CommonTables/arm_const_structs.c
+        $(CMSISDSP_PATH)/Source/CommonTables/arm_const_structs.c \
+        $(CMSISDSP_PATH)/Source/StatisticsFunctions/arm_mean_f32.c
 
 # Like SOURCES, but for include directories. Value should be paths to
 # directories (without a leading -I).

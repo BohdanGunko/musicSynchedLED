@@ -14,6 +14,7 @@
 #include "helper_utils.h"
 #include "ws2812.h"
 #include "fft_wrapper.h"
+#include "audio_visualizer.h"
 
 /* Defines for blinky LEDs task */
 #define BLINKY_LEDS_TASK_NAME       ("Blinky LEDs task")
@@ -63,6 +64,9 @@ static cyhal_timer_cfg_t timer_cfg = {
     .value = 0
 };
 
+/* CMSISDSP libray FFT object */
+arm_rfft_fast_instance_f32 fft_obj;
+
 /* Semaphore for synchronization between task and IRQ */
 static SemaphoreHandle_t audio_sampling_semaphore = NULL;
 
@@ -70,6 +74,14 @@ static SemaphoreHandle_t audio_sampling_semaphore = NULL;
 /* It need to be 2 * FFT_SIZE because while one part of the buffer is
  * processed other part is getting written ADC */
 static int32_t audio_buffer[FFT_SIZE * 2];
+
+/* FFT result will have length of FFT_SIZE_HALF, but fft wrapper
+ * internally uses result buffer for temporary convestions/results
+ * to save some space so result buffer must have same size as input buffer.
+ * Only first half of the buffer will contain meaningful data, other half
+ * will have "garbage" data.
+ */
+static float fft_res[FFT_SIZE];
 
 static TaskHandle_t led_task_handle;
 
@@ -82,7 +94,6 @@ int main(void)
 {
     cy_rslt_t cy_res;
     BaseType_t rtos_res;
-    arm_status arm_res;
 
     /* Used by GDB for better debugging experience */
     uxTopUsedPriority = configMAX_PRIORITIES - 1;
@@ -108,6 +119,7 @@ int main(void)
 
     /* Measure FFT performance before starting RToS to get more accurate results */
 #if MEASURE_PERFORMANCE == 1
+    arm_status arm_res;
     arm_res = measure_fft_performance(&timer_obj);
     ASSERT_WITH_PRINT(ARM_MATH_SUCCESS == arm_res, "measure_fft_performance failed!\r\n");
 #endif
@@ -162,13 +174,15 @@ void blinky_leds_task(void* arg)
         uint32_t red_async_duration = cyhal_timer_read(&timer_obj);
 #endif
 
-        for(uint32_t i = 0; i < FFT_SIZE; ++i)
-        {
-            printf("%ld\r\n", audio_buffer[(FFT_SIZE * active_uart_buffer) + i]);
+        /* Calculate FFT */
+        compute_rfft(&fft_obj, &audio_buffer[FFT_SIZE * active_uart_buffer], fft_res, FFT_SIZE);
 
-        }
-        /* Print dummy data to separate samples */
-        printf("0\r\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n");
+        /* Visualize FFT */
+        /* TODO: Visualization has low FPS when MEASURE_PERFORMANCE is 0.
+         * Adding delay instead of printf() does not help. I believe that this is
+         * RToS related problem, but need to check and fix this issue.
+         */
+        visualize_fft(fft_res, FFT_SIZE_HALF);
 
         /* Swap buffers */
         uint8_t swap_tmp = active_uart_buffer;
@@ -207,6 +221,7 @@ void blinky_leds_task(void* arg)
 static cy_rslt_t app_init(void)
 {
     cy_rslt_t cy_res;
+    arm_status arm_res;
 
     /* Initialize ADC */
     cy_res = adc_init();
@@ -227,6 +242,12 @@ static cy_rslt_t app_init(void)
     if(CY_RSLT_SUCCESS != cy_res)
     {
         return cy_res;
+    }
+
+    arm_res = arm_rfft_fast_init_f32(&fft_obj, FFT_SIZE);
+    if(ARM_MATH_SUCCESS != arm_res)
+    {
+        return (!CY_RSLT_SUCCESS);
     }
 
     return CY_RSLT_SUCCESS;
