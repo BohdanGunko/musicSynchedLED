@@ -88,21 +88,33 @@ COMPONENTS+=CUSTOM_DESIGN_MODUS
 # be used by device configurator
 DISABLE_COMPONENTS+=BSP_DESIGN_MODUS
 
+# Path to CMSIS DSP library
+CMSISDSP_PATH=../CMSIS_5/CMSIS/DSP
+
 # By default the build system automatically looks in the Makefile's directory
 # tree for source code and builds it. The SOURCES variable can be used to
 # manually add source code to the build process from a location not searched
 # by default, or otherwise not found by the build system.
-SOURCES=
+SOURCES=$(CMSISDSP_PATH)/Source/TransformFunctions/arm_rfft_fast_init_f32.c \
+        $(CMSISDSP_PATH)/Source/TransformFunctions/arm_rfft_fast_f32.c \
+        $(CMSISDSP_PATH)/Source/TransformFunctions/arm_cfft_init_f32.c \
+        $(CMSISDSP_PATH)/Source/TransformFunctions/arm_cfft_f32.c \
+        $(CMSISDSP_PATH)/Source/TransformFunctions/arm_cfft_radix8_f32.c \
+        $(CMSISDSP_PATH)/Source/TransformFunctions/arm_bitreversal2.c \
+        $(CMSISDSP_PATH)/Source/ComplexMathFunctions/arm_cmplx_mag_f32.c \
+        $(CMSISDSP_PATH)/Source/SupportFunctions/arm_q31_to_float.c \
+        $(CMSISDSP_PATH)/Source/CommonTables/arm_common_tables.c \
+        $(CMSISDSP_PATH)/Source/CommonTables/arm_const_structs.c
 
 # Like SOURCES, but for include directories. Value should be paths to
 # directories (without a leading -I).
-INCLUDES=
+INCLUDES=$(CMSISDSP_PATH)/Include
 
 # Add additional defines to the build process (without a leading -D).
 DEFINES=
 
 # Select softfp or hardfp floating point. Default is softfp.
-VFP_SELECT=
+VFP_SELECT=hardfp
 
 # Additional / custom C compiler flags.
 #
