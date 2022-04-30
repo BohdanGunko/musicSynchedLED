@@ -1,4 +1,3 @@
-#include "cyhal.h"
 #include "ws2812.h"
 
 #define WS_ZERO_OFFSET      (1)
