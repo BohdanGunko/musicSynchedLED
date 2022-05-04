@@ -11,6 +11,10 @@
 #define FFT_SIZE            (1024)
 #define FFT_SIZE_HALF       (FFT_SIZE / 2)
 
+/* Minimum and maximum supported FFT length */
+#define MIN_SUPPORTED_FFT_SIZE  (32)
+#define MAX_SUPPORTED_FFT_SIZE  (4096)
+
 /* Pin to sample audio signal from */
 #define AUDIO_SAMPLING_PIN  (CYBSP_A1)
 

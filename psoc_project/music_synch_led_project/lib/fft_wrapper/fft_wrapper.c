@@ -3,9 +3,6 @@
 
 /* 0 -> FFT, 1 -> IFFT */
 #define IFFT_FLAG               (0)
-/* Minimum and maximum supported FFT length */
-#define MIN_SUPPORTED_FFT_SIZE  (32)
-#define MAX_SUPPORTED_FFT_SIZE  (4096)
 
 /* Generates sin wave. Used for testing */
 static void generate_sin_wave(int32_t* res, size_t length);
