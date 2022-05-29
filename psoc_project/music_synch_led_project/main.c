@@ -177,6 +177,9 @@ void blinky_leds_task(void* arg)
         /* Calculate FFT */
         compute_rfft(&fft_obj, &audio_buffer[FFT_SIZE * active_uart_buffer], fft_res, FFT_SIZE);
 
+#if MEASURE_PERFORMANCE == 1
+        uint32_t fft_duration = cyhal_timer_read(&timer_obj) - red_async_duration;
+#endif
         /* Visualize FFT */
         /* TODO: Visualization has low FPS when MEASURE_PERFORMANCE is 0.
          * Adding delay instead of printf() does not help. I believe that this is
@@ -190,20 +193,22 @@ void blinky_leds_task(void* arg)
         active_adc_buffer = swap_tmp;
 
 #if MEASURE_PERFORMANCE == 1
-        uint32_t print_duration = cyhal_timer_read(&timer_obj) - red_async_duration;
+        uint32_t visualization_duration = cyhal_timer_read(&timer_obj) - fft_duration;
 #endif
 
         /* Semaphore will be released in ADC IRQ once cyhal_adc_read_async completes */
         xSemaphoreTake(audio_sampling_semaphore, portMAX_DELAY);
 
 #if MEASURE_PERFORMANCE == 1
-        uint32_t semaphore_wait_duration = cyhal_timer_read(&timer_obj) - print_duration;
+        uint32_t semaphore_wait_duration = cyhal_timer_read(&timer_obj) - visualization_duration;
         cyhal_timer_stop(&timer_obj);
 
-        printf("Duration: Async %lu\r\n", red_async_duration);
-        printf("Duration: Print %lu\r\n", print_duration);
-        printf("Duration: Sema  %lu\r\n", semaphore_wait_duration);
-        printf("Duration: Total %lu\r\n\n", semaphore_wait_duration + print_duration + red_async_duration);
+        printf("\r\nPerformance measurements:\r\n");
+        printf("ADC read async  %lu\r\n", red_async_duration);
+        printf("FFT             %lu\r\n", fft_duration);
+        printf("Visualization   %lu\r\n", visualization_duration);
+        printf("Semaphore take  %lu\r\n", semaphore_wait_duration);
+        printf("Total           %lu\r\n", semaphore_wait_duration + fft_duration + visualization_duration + red_async_duration);
 #endif
         /* TODO: uncomment this once visualization will be working */
         // ws2812_set_all_leds(255, 0, 0);    // Set all LEDs to RED at max brightness
