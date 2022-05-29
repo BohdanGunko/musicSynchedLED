@@ -20,7 +20,7 @@ void compute_rfft(arm_rfft_fast_instance_f32* fft_obj, int32_t* input, float* re
     arm_rfft_fast_f32(fft_obj, (float*)input, res, IFFT_FLAG);
 
     /* Calculate magnitude */
-    /* arm_cmplx_mag_f32 for every element does thefollowing:
+    /* arm_cmplx_mag_f32 for every element does the following:
      *      pDst[n] = sqrt(pSrc[(2*n)+0]^2 + pSrc[(2*n)+1]^2);
      *
      * So:

@@ -11,7 +11,6 @@
 #include "app_config.h"
 /* Libraries */
 #include <stdio.h>
-#include "helper_utils.h"
 #include "ws2812.h"
 #include "fft_wrapper.h"
 #include "audio_visualizer.h"
@@ -21,7 +20,11 @@
 #define BLINKY_LEDS_TASK_STACK_SIZE (2 * 1024)
 #define BLINKY_LEDS_TASK_PRIORITY   (5)
 
+/* Macro to convert sample rate to sample period in nanoseconds */
 #define SAMPLE_RATE_TO_PERIOD_NS(hz)  ((uint32_t)(((float)1000000000) / ((float)(hz))))
+
+/* Macro that prints given text when assertion fails */
+#define ASSERT_WITH_PRINT(x, ...)   if(!(x)) { printf(__VA_ARGS__ ); CY_ASSERT(0); }
 
 /* Used by GDB for better debugging experience */
 UBaseType_t __attribute__((used)) uxTopUsedPriority;
@@ -64,7 +67,7 @@ static cyhal_timer_cfg_t timer_cfg = {
     .value = 0
 };
 
-/* CMSISDSP libray FFT object */
+/* CMSIS DSP library FFT object */
 arm_rfft_fast_instance_f32 fft_obj;
 
 /* Semaphore for synchronization between task and IRQ */
@@ -76,7 +79,7 @@ static SemaphoreHandle_t audio_sampling_semaphore = NULL;
 static int32_t audio_buffer[FFT_SIZE * 2];
 
 /* FFT result will have length of FFT_SIZE_HALF, but fft wrapper
- * internally uses result buffer for temporary convestions/results
+ * internally uses result buffer for temporary conversions/results
  * to save some space so result buffer must have same size as input buffer.
  * Only first half of the buffer will contain meaningful data, other half
  * will have "garbage" data.
@@ -210,16 +213,6 @@ void blinky_leds_task(void* arg)
         printf("Semaphore take  %lu\r\n", semaphore_wait_duration);
         printf("Total           %lu\r\n", semaphore_wait_duration + fft_duration + visualization_duration + red_async_duration);
 #endif
-        /* TODO: uncomment this once visualization will be working */
-        // ws2812_set_all_leds(255, 0, 0);    // Set all LEDs to RED at max brightness
-        // ws2812_update();
-        // vTaskDelay(pdMS_TO_TICKS(1000));
-        // ws2812_set_all_leds(0, 255, 0);    // Set all LEDs to GREEN at max brightness
-        // ws2812_update();
-        // vTaskDelay(pdMS_TO_TICKS(1000));
-        // ws2812_set_all_leds(0, 0, 255);    // Set all LEDs to BLUE at max brightness
-        // ws2812_update();
-        // vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
@@ -249,6 +242,7 @@ static cy_rslt_t app_init(void)
         return cy_res;
     }
 
+    /* Initialize FFT instance for CMSIS DSP library */
     arm_res = arm_rfft_fast_init_f32(&fft_obj, FFT_SIZE);
     if(ARM_MATH_SUCCESS != arm_res)
     {
