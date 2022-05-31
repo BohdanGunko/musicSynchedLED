@@ -188,7 +188,8 @@ void blinky_leds_task(void* arg)
          * Adding delay instead of printf() does not help. I believe that this is
          * RToS related problem, but need to check and fix this issue.
          */
-        visualize_fft(fft_res, FFT_SIZE_HALF);
+        /* TODO: implement mode switching */
+        visualize_fft(fft_res, FFT_SIZE_HALF, VISUALIZATION_MODE_SNAKE_FLOW_BIDIRECTIONAL);
 
         /* Swap buffers */
         uint8_t swap_tmp = active_uart_buffer;

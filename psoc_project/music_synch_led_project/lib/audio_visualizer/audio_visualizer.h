@@ -3,6 +3,12 @@
 
 #include "ws2812.h"
 
-void visualize_fft(const float* fft_res, size_t fft_size);
+typedef enum {
+    VISUALIZATION_MODE_MAP_RGB,
+    VISUALIZATION_MODE_SNAKE_FLOW,
+    VISUALIZATION_MODE_SNAKE_FLOW_BIDIRECTIONAL
+} visualization_mode_t;
+
+void visualize_fft(const float* fft_res, size_t fft_size, visualization_mode_t visualization_mode);
 
 #endif /* __AUDIO_VISUALIZER_H__ */
