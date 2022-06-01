@@ -2,7 +2,7 @@
 #define __APP_CONFIG_H__
 
 /* Number of LEDs */
-#define WS2812_LEDS_COUNT   (30)
+#define WS2812_LEDS_COUNT   (30 * 6)
 
 /* Pin to which ws2812 data line is connected */
 #define WS2812_LEDS_PIN     (CYBSP_A0)

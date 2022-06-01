@@ -86,12 +86,25 @@ static int32_t audio_buffer[FFT_SIZE * 2];
  */
 static float fft_res[FFT_SIZE];
 
+/* Handle for LEDs task */
 static TaskHandle_t led_task_handle;
+
+/* Used to change visualization modes in runtime */
+volatile visualization_mode_t visualization_mode = VISUALIZATION_MODE_SNAKE_FLOW_BIDIRECTIONAL;
 
 void blinky_leds_task(void* arg);
 static void adc_event_handler(void* arg, cyhal_adc_event_t event);
 static cy_rslt_t app_init(void);
 static cy_rslt_t adc_init(void);
+static void switch_mode_interrupt_handler(void* handler_arg, cyhal_gpio_event_t event);
+
+/* Callback data for the user button */
+cyhal_gpio_callback_data_t gpio_callback_data = {
+    switch_mode_interrupt_handler,
+    NULL,
+    NULL,
+    NC
+};
 
 int main(void)
 {
@@ -188,7 +201,8 @@ void blinky_leds_task(void* arg)
          * Adding delay instead of printf() does not help. I believe that this is
          * RToS related problem, but need to check and fix this issue.
          */
-        visualize_fft(fft_res, FFT_SIZE_HALF);
+        /* TODO: implement mode switching */
+        visualize_fft(fft_res, FFT_SIZE_HALF, visualization_mode);
 
         /* Swap buffers */
         uint8_t swap_tmp = active_uart_buffer;
@@ -241,6 +255,14 @@ static cy_rslt_t app_init(void)
     {
         return cy_res;
     }
+
+    /* Initialize the user button */
+    cy_res = cyhal_gpio_init(CYBSP_USER_BTN, CYHAL_GPIO_DIR_INPUT,
+                    CYHAL_GPIO_DRIVE_PULLUP, CYBSP_BTN_OFF);
+
+    /* Configure GPIO interrupt */
+    cyhal_gpio_register_callback(CYBSP_USER_BTN, &gpio_callback_data);
+    cyhal_gpio_enable_event(CYBSP_USER_BTN, CYHAL_GPIO_IRQ_FALL, 7, true);
 
     /* Initialize FFT instance for CMSIS DSP library */
     arm_res = arm_rfft_fast_init_f32(&fft_obj, FFT_SIZE);
@@ -303,4 +325,13 @@ static void adc_event_handler(void* arg, cyhal_adc_event_t event)
         xSemaphoreGiveFromISR(audio_sampling_semaphore, &yield_required);
         portYIELD_FROM_ISR(yield_required);
     }
+}
+
+void switch_mode_interrupt_handler(void* handler_arg, cyhal_gpio_event_t event)
+{
+    (void)handler_arg;
+    (void)event;
+
+    /* Cycle through the visualization modes */
+    visualization_mode = (visualization_mode + 1) % VISUALIZATION_MODE_MAX;
 }
